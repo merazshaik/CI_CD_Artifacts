@@ -5,7 +5,7 @@
 
 
 trigger:
-- "*"
+ - main
 variables:
   ARM_PASS: $(adminpass)
 stages:
