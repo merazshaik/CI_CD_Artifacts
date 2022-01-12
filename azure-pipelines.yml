@@ -3,8 +3,11 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+
 trigger:
 - "*"
+variables:
+  ARM_PASS: $(adminpass)
 stages:
   - stage: test
     jobs:
@@ -12,6 +15,11 @@ stages:
         pool:
           vmImage: window-latest
         steps:
+        - task: CopyFiles@2
+          inputs:
+            SourceFolder: 'https://github.com/merazshaik/test_arm'
+            Contents: '**'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
         - task: AzureResourceManagerTemplateDeployment@3
           inputs:
             deploymentScope: 'Resource Group'
@@ -21,8 +29,8 @@ stages:
             resourceGroupName: 'MerazRG'
             location: 'East US'
             templateLocation: 'Linked artifact'
-            csmFile: '$(Build.SourcesDirectory)/CI_CD_Artifacts/blob/main/template.json'
-            csmParametersFile: '$(Build.SourcesDirectory)/CI_CD_Artifacts/blob/main/parameters.json'
+            csmFile: '$(Build.ArtifactStagingDirectory)/template.json'
+            csmParametersFile: '$(Build.ArtifactStagingDirectory)/parameters.json'
             deploymentMode: 'Validation'
         - task: PowerShell@2
           displayName: 'check for the deletion'
@@ -32,8 +40,8 @@ stages:
               Install-Module Az.Resources -RequiredVersion 1.12.1-preview -AllowPrerelease -Force -Scope CurrentUser
               $Parameters = @{
                 ResourcegroupName     = "ARMDeploymentTest"
-                Templatefile          = ".\CI_CD_Artifacts/blob/main/template.json"
-                TemplateParameterfile = ".\CI_CD_Artifacts/blob/main/parameters.json"
+                Templatefile          = "$(Build.ArtifactStagingDirectory)/template.json"
+                TemplateParameterfile = "$(Build.ArtifactStagingDirectory)/parameters.json"
                 Mode                  = 'Incremental'
                }
               $Result = Get-AzResourceGroupDeploymentWhatIfResult @Parameters
